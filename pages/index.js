@@ -1,5 +1,5 @@
 function Home() {
-    return <h1>Pitu</h1>
+  return <h1>Pitu</h1>;
 }
 
 export default Home;
