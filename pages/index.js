@@ -1,5 +1,6 @@
-function Home() {
-  return <h1>Página em construção</h1>;
-}
+import React from "react";
+import App from "./App";
 
-export default Home;
+export default function Home() {
+  return <App />;
+}
