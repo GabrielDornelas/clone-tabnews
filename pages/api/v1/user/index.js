@@ -17,11 +17,17 @@ async function getHandler(request, response) {
   controller.setSessionCookie(renewedSessionObject.token, response);
   const userFound = await user.findOneById(sessionObject.user_id);
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 1bf8e86 (fix: handle cache)
   response.setHeader(
     "Cache-Control",
     "no-store, no-cache, max-age=0, must-revalidate",
   );
+<<<<<<< HEAD
 =======
 >>>>>>> bfab0b4 (feat: implement `/api/v1/user` endpoint with session renewal)
+=======
+>>>>>>> 1bf8e86 (fix: handle cache)
   return response.status(200).json(userFound);
 }
