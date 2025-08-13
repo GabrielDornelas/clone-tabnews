@@ -3,10 +3,10 @@ import password from "models/password.js";
 import { ValidationError, NotFoundError } from "infra/errors.js";
 
 async function findOneById(id) {
-  const userFound = await runSelecQuery(id);
+  const userFound = await runSelectQuery(id);
   return userFound;
 
-  async function runSelecQuery(id) {
+  async function runSelectQuery(id) {
     const results = await database.query({
       text: `
         SELECT
@@ -31,10 +31,10 @@ async function findOneById(id) {
 }
 
 async function findOneByUsername(username) {
-  const userFound = await runSelecQuery(username);
+  const userFound = await runSelectQuery(username);
   return userFound;
 
-  async function runSelecQuery(username) {
+  async function runSelectQuery(username) {
     const results = await database.query({
       text: `
         SELECT
@@ -59,10 +59,10 @@ async function findOneByUsername(username) {
 }
 
 async function findOneByEmail(email) {
-  const userFound = await runSelecQuery(email);
+  const userFound = await runSelectQuery(email);
   return userFound;
 
-  async function runSelecQuery(email) {
+  async function runSelectQuery(email) {
     const results = await database.query({
       text: `
         SELECT
