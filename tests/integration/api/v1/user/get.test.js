@@ -1,7 +1,7 @@
-import orchestrator from "tests/orchestrator";
-import session from "models/session.js";
 import { version as uuidVersion } from "uuid";
 import setCookieParser from "set-cookie-parser";
+import orchestrator from "tests/orchestrator.js";
+import session from "models/session.js";
 
 beforeAll(async () => {
   await orchestrator.waitForAllServices();
@@ -13,7 +13,7 @@ describe("GET /api/v1/user", () => {
   describe("Default user", () => {
     test("With valid session", async () => {
       const createdUser = await orchestrator.createUser({
-        username: "TestUserWithValidSession",
+        username: "UserWithValidSession",
       });
 
       const sessionObject = await orchestrator.createSession(createdUser.id);
@@ -35,7 +35,7 @@ describe("GET /api/v1/user", () => {
 
       expect(responseBody).toEqual({
         id: createdUser.id,
-        username: "TestUserWithValidSession",
+        username: "UserWithValidSession",
         email: createdUser.email,
         password: createdUser.password,
         created_at: createdUser.created_at.toISOString(),
@@ -46,6 +46,7 @@ describe("GET /api/v1/user", () => {
       expect(Date.parse(responseBody.created_at)).not.toBeNaN();
       expect(Date.parse(responseBody.updated_at)).not.toBeNaN();
 
+      // Session renewal assertions
       const renewedSessionObject = await session.findOneValidByToken(
         sessionObject.token,
       );
@@ -57,31 +58,36 @@ describe("GET /api/v1/user", () => {
         renewedSessionObject.updated_at > sessionObject.updated_at,
       ).toEqual(true);
 
+      // Set-Cookie assertions
       const parsedSetCookie = setCookieParser(response, {
         map: true,
       });
+
       expect(parsedSetCookie.session_id).toEqual({
         name: "session_id",
         value: sessionObject.token,
         maxAge: session.EXPIRATION_IN_MILLISECONDS / 1000,
-        httpOnly: true,
         path: "/",
+        httpOnly: true,
       });
     });
 
-    test("With valid ongoing session", async () => {
+    test("With halfway-expired session", async () => {
       jest.useFakeTimers({
         now: new Date(Date.now() - session.EXPIRATION_IN_MILLISECONDS / 2),
       });
+
       const createdUser = await orchestrator.createUser({
-        username: "TestUserWithOngoingSession",
+        username: "UserWithHalfwayExpiredSession",
       });
 
       const sessionObject = await orchestrator.createSession(createdUser.id);
 
+      jest.useRealTimers();
+
       const response = await fetch("http://localhost:3000/api/v1/user", {
         headers: {
-          Cookie: `session_id=${sessionObject.token}`,
+          cookie: `session_id=${sessionObject.token}`,
         },
       });
 
@@ -91,7 +97,7 @@ describe("GET /api/v1/user", () => {
 
       expect(responseBody).toEqual({
         id: createdUser.id,
-        username: "TestUserWithOngoingSession",
+        username: "UserWithHalfwayExpiredSession",
         email: createdUser.email,
         password: createdUser.password,
         created_at: createdUser.created_at.toISOString(),
@@ -102,6 +108,7 @@ describe("GET /api/v1/user", () => {
       expect(Date.parse(responseBody.created_at)).not.toBeNaN();
       expect(Date.parse(responseBody.updated_at)).not.toBeNaN();
 
+      // Session renewal assertions
       const renewedSessionObject = await session.findOneValidByToken(
         sessionObject.token,
       );
@@ -113,28 +120,30 @@ describe("GET /api/v1/user", () => {
         renewedSessionObject.updated_at > sessionObject.updated_at,
       ).toEqual(true);
 
-      jest.useRealTimers();
-
+      // Set‑Cookie assertions
       const parsedSetCookie = setCookieParser(response, {
         map: true,
       });
+
       expect(parsedSetCookie.session_id).toEqual({
         name: "session_id",
         value: sessionObject.token,
         maxAge: session.EXPIRATION_IN_MILLISECONDS / 1000,
-        httpOnly: true,
         path: "/",
+        httpOnly: true,
       });
     });
 
-    test("With nonexistentToken session", async () => {
+    test("With nonexistent session", async () => {
       const nonexistentToken =
-        "504f542559d54f0dc8b0767ec06a0dcb7ec0dc34e6536d3d32abfc0c1cf4d3b4aaa245abaefbd1b2b58dab6fad3185ae";
+        "f0b62a5ff97ae607701ceeee2e3c4987c4b9debb534410e2444f9eb2288b6e3b90158a71d086e31eabef9b36cbb549e1";
+
       const response = await fetch("http://localhost:3000/api/v1/user", {
         headers: {
-          Cookie: `session_id=${nonexistentToken}`,
+          cookie: `session_id=${nonexistentToken}`,
         },
       });
+
       expect(response.status).toBe(401);
 
       const responseBody = await response.json();
@@ -145,6 +154,19 @@ describe("GET /api/v1/user", () => {
         action: "Verifique se este usuário está logado e tente novamente.",
         status_code: 401,
       });
+
+      // Set-Cookie assertions
+      const parsedSetCookie = setCookieParser(response, {
+        map: true,
+      });
+
+      expect(parsedSetCookie.session_id).toEqual({
+        name: "session_id",
+        value: "invalid",
+        maxAge: -1,
+        path: "/",
+        httpOnly: true,
+      });
     });
 
     test("With expired session", async () => {
@@ -153,7 +175,7 @@ describe("GET /api/v1/user", () => {
       });
 
       const createdUser = await orchestrator.createUser({
-        username: "TestUserWithExpiredSession",
+        username: "UserWithExpiredSession",
       });
 
       const sessionObject = await orchestrator.createSession(createdUser.id);
@@ -175,6 +197,19 @@ describe("GET /api/v1/user", () => {
         message: "Usuário não possui sessão ativa.",
         action: "Verifique se este usuário está logado e tente novamente.",
         status_code: 401,
+      });
+
+      // Set-Cookie assertions
+      const parsedSetCookie = setCookieParser(response, {
+        map: true,
+      });
+
+      expect(parsedSetCookie.session_id).toEqual({
+        name: "session_id",
+        value: "invalid",
+        maxAge: -1,
+        path: "/",
+        httpOnly: true,
       });
     });
   });
