@@ -10,7 +10,7 @@ exports.up = (pgm) => {
     },
 
     used_at: {
-      type: "timestampz",
+      type: "timestamptz",
       notNull: false,
     },
 
@@ -20,18 +20,18 @@ exports.up = (pgm) => {
     },
 
     expires_at: {
-      type: "timestampz",
+      type: "timestamptz",
       notNull: true,
     },
 
     created_at: {
-      type: "timestampz",
+      type: "timestamptz",
       notNull: true,
       default: pgm.func("timezone('utc', now())"),
     },
 
     updated_at: {
-      type: "timestampz",
+      type: "timestamptz",
       notNull: true,
       default: pgm.func("timezone('utc', now())"),
     }
